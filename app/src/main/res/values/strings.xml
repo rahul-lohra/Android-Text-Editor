@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AwesomeTextEditor</string>
+    <string name="photo">Photo</string>
+    <string name="save">Save</string>
+</resources>
