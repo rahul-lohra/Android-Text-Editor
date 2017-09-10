@@ -10,6 +10,7 @@ import java.util.List;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 
 /**
  * Created by rkrde on 10-09-2017.
@@ -18,10 +19,10 @@ import io.reactivex.Observable;
 public interface NotesDao {
 
     @Query("select * from notes")
-    List<Notes> getAllNotes();
+    Single<List<Notes>> getAllNotes();
 
     @Query("select * from notes where uId = :uId")
-    Flowable<Notes> getNotesForUid(Long uId);
+    Single<List<Notes>> getNotesForUid(Long uId);
 
     @Insert
     void insertAll(ArrayList<Notes> list);

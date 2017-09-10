@@ -1,5 +1,6 @@
 package com.example.rkrde.awesometexteditor.activity
 
+import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -11,7 +12,13 @@ import com.example.rkrde.awesometexteditor.MyApp
 import com.example.rkrde.awesometexteditor.R
 import com.example.rkrde.awesometexteditor.modal.AppDatabase
 import com.example.rkrde.awesometexteditor.modal.Notes
+import io.reactivex.SingleObserver
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
+import kotlinx.android.synthetic.main.activity_editor.*
 import kotlinx.android.synthetic.main.activity_notes_home.*
+import timber.log.Timber
 
 
 class NotesHomeActivity : AppCompatActivity() {
@@ -19,6 +26,7 @@ class NotesHomeActivity : AppCompatActivity() {
     lateinit var myAdapter: MyAdapter
     lateinit var appDatabase:AppDatabase
     lateinit var notes :ArrayList<Notes>
+    lateinit var context: Context
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_notes_home)
@@ -37,6 +45,7 @@ class NotesHomeActivity : AppCompatActivity() {
 
     fun initVars(){
         notes = arrayListOf()
+        context = this
         appDatabase = MyApp.getAppDatabase(this)
     }
 
@@ -48,13 +57,37 @@ class NotesHomeActivity : AppCompatActivity() {
     }
 
     fun fetchNotesAndDisplay(){
-        notes.addAll(appDatabase.notesDao().getAllNotes())
+        val allNotes = appDatabase.notesDao().getAllNotes()
 
-        if(notes.size>0){
-            Log.e("++++","++++")
-            myAdapter.notifyDataSetChanged()
-        }else
-            Toast.makeText(this,"no notes",Toast.LENGTH_SHORT).show()
+
+        val obsSingle = object : SingleObserver<List<Notes>> {
+            override fun onSubscribe(d: Disposable) {
+                Timber.d("onSubscribe")
+            }
+
+            override fun onSuccess(t: List<Notes>) {
+                Timber.d("onSuccess")
+                if(t.size>0){
+                    Log.e("++++","++++")
+                    notes.clear()
+                    notes.addAll(t)
+                    myAdapter.notifyDataSetChanged()
+                }else
+                {
+                    Toast.makeText(context,"no notes",Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onError(e: Throwable) {
+                Timber.d("onError")
+            }
+        }
+
+
+        allNotes.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(obsSingle)
+
 
     }
 }

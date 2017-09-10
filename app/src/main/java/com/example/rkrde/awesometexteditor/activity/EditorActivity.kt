@@ -26,8 +26,12 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import kotlinx.android.synthetic.main.activity_editor.*
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.async
+import org.jetbrains.anko.coroutines.experimental.bg
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import timber.log.Timber
 import java.util.function.Consumer
 
 
@@ -82,23 +86,26 @@ class EditorActivity : BaseActivity() {
             }
         }
 
-        notes.subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(observer)
-
-        val obsSingle = object :SingleObserver<Notes>{
+        val obsSingle = object :SingleObserver<List<Notes>>{
             override fun onSubscribe(d: Disposable) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+                Timber.d("onSubscribe")
             }
 
-            override fun onSuccess(t: Notes) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            override fun onSuccess(t: List<Notes>) {
+                Timber.d("onSuccess")
+                editorView.showNoteFromDb(t)
             }
 
             override fun onError(e: Throwable) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+                Timber.d("onError")
             }
         }
+
+
+        notes.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(obsSingle)
+
 
 
 
@@ -129,7 +136,10 @@ class EditorActivity : BaseActivity() {
             }
         }
 
-        appdatabase.notesDao().insertAll(editorList)
+        async(UI){
+            bg{appdatabase.notesDao().insertAll(editorList)}
+        }
+
 
     }
     fun getImageFromCamera(){
