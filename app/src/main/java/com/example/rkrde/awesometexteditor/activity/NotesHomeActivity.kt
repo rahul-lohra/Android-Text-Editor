@@ -33,6 +33,11 @@ class NotesHomeActivity : AppCompatActivity() {
         initVars()
         setAdapter()
         setClicks()
+
+    }
+
+    override fun onStart() {
+        super.onStart()
         fetchNotesAndDisplay()
     }
 
@@ -68,7 +73,7 @@ class NotesHomeActivity : AppCompatActivity() {
             override fun onSuccess(t: List<Notes>) {
                 Timber.d("onSuccess")
                 if(t.size>0){
-                    Log.e("++++","++++")
+                    Timber.d("++++")
                     notes.clear()
                     notes.addAll(t)
                     myAdapter.notifyDataSetChanged()
@@ -79,7 +84,7 @@ class NotesHomeActivity : AppCompatActivity() {
             }
 
             override fun onError(e: Throwable) {
-                Timber.d("onError")
+                Timber.d("onError: ${e.message}")
             }
         }
 

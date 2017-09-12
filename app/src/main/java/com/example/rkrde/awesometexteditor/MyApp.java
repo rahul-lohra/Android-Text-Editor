@@ -5,6 +5,7 @@ import android.arch.persistence.room.Room;
 import android.content.Context;
 
 import com.example.rkrde.awesometexteditor.modal.AppDatabase;
+import com.facebook.stetho.Stetho;
 
 import timber.log.Timber;
 
@@ -22,12 +23,18 @@ public class MyApp extends Application {
         super.onCreate();
 
         initAppDatabase();
-        Timber.plant(new Timber.DebugTree());
+        initStetho();
+        Timber.plant(new MyDebugTree());
+    }
+
+    private void initStetho() {
+        Stetho.initializeWithDefaults(this);
     }
 
     private AppDatabase initAppDatabase() {
         appDatabase = Room.databaseBuilder(getApplicationContext(),
-                AppDatabase.class, DATABASE_NAME).build();
+                AppDatabase.class, DATABASE_NAME).
+                fallbackToDestructiveMigration().build();
         return appDatabase;
     }
 
@@ -36,7 +43,8 @@ public class MyApp extends Application {
             return appDatabase;
         else
             return Room.databaseBuilder(context,
-                    AppDatabase.class, DATABASE_NAME)
-                    .build();
+                    AppDatabase.class, DATABASE_NAME).
+                    fallbackToDestructiveMigration().
+                    build();
     }
 }

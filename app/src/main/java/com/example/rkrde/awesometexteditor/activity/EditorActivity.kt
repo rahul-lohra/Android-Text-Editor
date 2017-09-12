@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.support.v7.app.AlertDialog
 import android.support.v7.widget.AppCompatEditText
+import android.support.v7.widget.AppCompatImageView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -40,60 +41,38 @@ class EditorActivity : BaseActivity() {
     private val SELECT_IMAGE = 2
     val TAG = "EditorActivity"
     val activity = this
-     var uId:Long = -1
-
+    var uId: Long = -1
+    val NO_UID: Long = -1
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
         handleIntent()
     }
 
-    fun handleIntent(){
+    fun handleIntent() {
         val bundle = intent.extras
-        if(bundle!=null)
-        {
-            uId = bundle.getLong("uId",-1)
-            val l :Long = 1
-            if(uId!= l){
+        if (bundle != null) {
+            uId = bundle.getLong("uId", -1)
+
+            if (uId != NO_UID) {
                 showNoteFromDb()
             }
         }
 
     }
 
-    fun showNoteFromDb(){
-
-//        val notes2 = Observable.just(Notes(1,1))
+    fun showNoteFromDb() {
 
         val notes = appdatabase.notesDao().getNotesForUid(uId)
 
-        val observer = object : Subscriber<Notes>{
-            override fun onError(t: Throwable?) {
-
-            }
-
-            override fun onNext(t: Notes?) {
-                if(t!=null)
-                    editorView.addEditextFromDb(t)
-            }
-
-            override fun onComplete() {
-
-            }
-
-            override fun onSubscribe(s: Subscription?) {
-
-            }
-        }
-
-        val obsSingle = object :SingleObserver<List<Notes>>{
+        val obsSingle = object : SingleObserver<List<Notes>> {
             override fun onSubscribe(d: Disposable) {
                 Timber.d("onSubscribe")
             }
 
             override fun onSuccess(t: List<Notes>) {
                 Timber.d("onSuccess")
-                editorView.showNoteFromDb(t)
+                editorView.showNoteFromDb(t,contentResolver)
             }
 
             override fun onError(e: Throwable) {
@@ -101,52 +80,57 @@ class EditorActivity : BaseActivity() {
             }
         }
 
-
         notes.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(obsSingle)
 
-
-
-
-//        notes2.subscribeOn(Schedulers.io())
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe(object:Observer<Notes>{})
-
-//        val f:Flowable<Notes> = Flowable.create(object )
-//
-//        editorView.showNoteFromDb(notes = notes)
-
     }
 
 
-    fun saveData(){
+    fun saveData() {
         val linearLayout = editorView.ll
         val editorList = editorView.notesList
 
-        val uniqueId = Constants.getCurrentTime()
-        val date = Constants.getCurrentTime()
-        for(i in 0..linearLayout.childCount)
-        {
+        var uniqueId = Constants.getCurrentTime()
+
+        if (uId != NO_UID) {
+            uniqueId = uId.toString()
+            async(UI) {
+                bg { appdatabase.notesDao().deleteNotes(uId) }
+            }
+        }
+        val date = uniqueId
+        val lastUpdated = Constants.getCurrentTime()
+        var indexUri = 0 //editorView.uriList
+        for (i in 0..linearLayout.childCount-1) {
             val v = linearLayout.getChildAt(i)
-            if(v is AppCompatEditText){
-                editorList[i].noteId = uniqueId
-                editorList[i].creationDate = date
+
+            editorList[i].noteId = uniqueId
+            editorList[i].creationDate = date
+            editorList[i].lastUpdated = lastUpdated
+            if (v is AppCompatEditText) {
                 editorList[i].text = v.text.toString()
+            }else if(v is AppCompatImageView){
+                /*
+                * add file paths
+                * */
+                editorList[i].uri =  editorView.uriList[indexUri].toString()
+                ++indexUri
             }
         }
 
-        async(UI){
-            bg{appdatabase.notesDao().insertAll(editorList)}
+        async(UI) {
+            bg { appdatabase.notesDao().insertAll(editorList) }
         }
 
 
     }
-    fun getImageFromCamera(){
+
+    fun getImageFromCamera() {
 
     }
 
-    fun convertUriToTempFile(uri:Uri,mimeType:String): FileModal {
+    fun convertUriToTempFile(uri: Uri, mimeType: String): FileModal {
 
 
         Log.d(TAG, "mimeType:" + mimeType)
@@ -171,15 +155,15 @@ class EditorActivity : BaseActivity() {
         return FileModal("", "", tempUri, mimeType)
     }
 
-    fun uploadThisUri(uri:Uri,mimeType:String){
+    fun uploadThisUri(uri: Uri, mimeType: String) {
 
     }
 
-    fun sendImageToEditor(fileModal: FileModal){
+    fun sendImageToEditor(fileModal: FileModal) {
         editorView.addImage(fileModal)
     }
 
-    fun isValidFile(uri: Uri, targetMimeType:Array<String>){
+    fun isValidFile(uri: Uri, targetMimeType: Array<String>) {
 
         /*
         *
@@ -199,7 +183,7 @@ class EditorActivity : BaseActivity() {
 //                    val async = Async(uri,targetMimeType[i]).execute()
 //                    sendImageToEditor(fileModal)
                     val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
-                    editorView.addBitmap(bitmap)
+                    editorView.addBitmap(uri,bitmap)
                     break
                 }
 
@@ -233,24 +217,24 @@ class EditorActivity : BaseActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        when(requestCode){
+        when (requestCode) {
             SELECT_IMAGE ->
                 if (resultCode == Activity.RESULT_OK) {
                     val mUri = data?.data
-                    val arr = arrayOf("jpg","png","jpeg","webp")
-                    if(mUri!=null)
-                        isValidFile(mUri,arr)
+                    val arr = arrayOf("jpg", "png", "jpeg", "webp")
+                    if (mUri != null)
+                        isValidFile(mUri, arr)
                 }
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.editor_menu,menu)
+        menuInflater.inflate(R.menu.editor_menu, menu)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        when(item?.itemId){
+        when (item?.itemId) {
             R.id.menu_cam -> showDiaogToTakePic()
             R.id.menu_save -> saveData()
         }
@@ -258,13 +242,12 @@ class EditorActivity : BaseActivity() {
     }
 
 
-
-    fun showDiaogToTakePic(){
+    fun showDiaogToTakePic() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Pick from below")
-        val str = arrayOf("Gallery","Camera")
-        builder.setItems(str, { _,i ->
-            when(i){
+        val str = arrayOf("Gallery", "Camera")
+        builder.setItems(str, { _, i ->
+            when (i) {
                 0 -> getImageFromGallery()
                 1 -> getImageFromCamera()
             }
@@ -272,20 +255,19 @@ class EditorActivity : BaseActivity() {
         builder.show()
     }
 
-    fun getImageFromGallery(){
+    fun getImageFromGallery() {
         val intentImg = Intent(Intent.ACTION_GET_CONTENT)
         intentImg.putExtra(Intent.EXTRA_LOCAL_ONLY, true)
         intentImg.addCategory(Intent.CATEGORY_OPENABLE)
         intentImg.setType("image/*")
         try {
             startActivityForResult(Intent.createChooser(intentImg, "Select File to upload"), SELECT_IMAGE)
-        }
-        catch(ex:android. content . ActivityNotFoundException) {
+        } catch (ex: android.content.ActivityNotFoundException) {
             ex.printStackTrace()
         }
     }
 
-    inner class Async(val uri:Uri,val mimeType: String) : AsyncTask<Unit, Unit, FileModal>() {
+    inner class Async(val uri: Uri, val mimeType: String) : AsyncTask<Unit, Unit, FileModal>() {
         val TAG = "Async"
 
         //todo iska returntype dekho
@@ -312,6 +294,7 @@ class EditorActivity : BaseActivity() {
 
             return FileModal("", "", tempUri, mimeType)
         }
+
         override fun onPostExecute(result: FileModal) {
             super.onPostExecute(result)
             sendImageToEditor(result)

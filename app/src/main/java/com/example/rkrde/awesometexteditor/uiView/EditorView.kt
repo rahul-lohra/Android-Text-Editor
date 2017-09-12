@@ -1,7 +1,10 @@
 package com.example.rkrde.awesometexteditor.uiView
 
+import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.Uri
+import android.provider.MediaStore
 import android.support.v7.widget.AppCompatEditText
 import android.support.v7.widget.AppCompatImageView
 import android.util.AttributeSet
@@ -13,6 +16,7 @@ import com.bumptech.glide.Glide
 import com.example.rkrde.awesometexteditor.modal.FileModal
 import com.example.rkrde.awesometexteditor.R
 import com.example.rkrde.awesometexteditor.modal.Notes
+import kotlinx.android.synthetic.main.activity_editor.*
 
 /**
  * Created by rkrde on 09-09-2017.
@@ -26,16 +30,17 @@ class EditorView : FrameLayout {
     val etList = arrayListOf<AppCompatEditText>()
     val imgList = arrayListOf<AppCompatImageView>()
     val notesList = arrayListOf<Notes>()
+    val uriList = arrayListOf<Uri>()
 
 
-    fun showNoteFromDb(notes: List<Notes>) {
+    fun showNoteFromDb(notes: List<Notes>,contentResolver: ContentResolver) {
         clearAllList()
         notesList.addAll(notes)
 
         notesList.forEach { x ->
             when (x.type) {
                 Notes.TYPE_TEXT -> addEditextFromDb(x)
-                Notes.TYPE_IMAGE-> addImageFromDb(x)
+                Notes.TYPE_IMAGE-> addImageFromDb(contentResolver,x)
             }
         }
 
@@ -64,11 +69,14 @@ class EditorView : FrameLayout {
 
     }
 
-    fun addImageFromDb(notes: Notes) {
+    fun addImageFromDb(contentResolver:ContentResolver,notes: Notes) {
 
+        val uri = Uri.parse(notes.uri)
+        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+        addBitmap(uri,bitmap)
     }
 
-    fun addBitmap(bitmap: Bitmap) {
+    fun addBitmap(uri: Uri, bitmap: Bitmap) {
         val imageView = AppCompatImageView(context)
         imageView.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         imageView.adjustViewBounds = false
@@ -94,7 +102,10 @@ class EditorView : FrameLayout {
         imgList.add(imageView)
 
         val index = ll.childCount
-        notesList.add(Notes(index, Notes.TYPE_IMAGE))
+        val note = Notes(index,Notes.TYPE_IMAGE)
+        uriList.add(uri)
+        note.uri = uri.toString()
+        notesList.add(note)
 
         if (isLastEtFocused())
             addNewEditText()

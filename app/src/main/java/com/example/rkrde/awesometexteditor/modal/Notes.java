@@ -23,6 +23,9 @@ public class Notes {
     @ColumnInfo(name = "fileName")
     private String fileName;
 
+    @ColumnInfo(name = "uri")
+    private String uri;
+
     @ColumnInfo(name = "title")
     private String title;
 
@@ -35,12 +38,27 @@ public class Notes {
     @ColumnInfo(name = "creationDate")
     private String creationDate;
 
+    @ColumnInfo(name = "lastUpdated")
+    private String lastUpdated;
+
     @ColumnInfo(name = "index")
     private int index;
 
     public Notes(int type, int index) {
         this.type = type;
         this.index = index;
+    }
+
+    public void setuId(long uId) {
+        this.uId = uId;
+    }
+
+    public String getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(String lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 
     public long getuId() {
@@ -105,5 +123,13 @@ public class Notes {
 
     public void setIndex(int index) {
         this.index = index;
+    }
+
+    public String getUri() {
+        return uri;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
     }
 }
