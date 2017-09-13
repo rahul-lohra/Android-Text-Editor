@@ -62,17 +62,37 @@ class EditorActivity : BaseActivity() {
     }
 
     fun showNoteFromDb() {
+        val noteId = appdatabase.notesDao().getNoteForUid(uId)
 
-        val notes = appdatabase.notesDao().getNotesForUid(uId)
 
-        val obsSingle = object : SingleObserver<List<Notes>> {
+        val obsSingleNoteId = object : SingleObserver<Notes> {
             override fun onSubscribe(d: Disposable) {
                 Timber.d("onSubscribe")
             }
 
-            override fun onSuccess(t: List<Notes>) {
-                Timber.d("onSuccess")
-                editorView.showNoteFromDb(t,contentResolver)
+            override fun onSuccess(t: Notes) {
+
+                val notes = appdatabase.notesDao().getNotesForUid(t.noteId)
+
+                val obsSingle = object : SingleObserver<List<Notes>> {
+                    override fun onSubscribe(d: Disposable) {
+                        Timber.d("onSubscribe")
+                    }
+
+                    override fun onSuccess(t: List<Notes>) {
+                        Timber.d("onSuccess")
+                        editorView.showNoteFromDb(t,contentResolver)
+                    }
+
+                    override fun onError(e: Throwable) {
+                        Timber.d("onError: ${e.message}")
+                    }
+                }
+
+                notes.subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                notes.subscribe(obsSingle)
+
             }
 
             override fun onError(e: Throwable) {
@@ -80,9 +100,9 @@ class EditorActivity : BaseActivity() {
             }
         }
 
-        notes.subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(obsSingle)
+        noteId.subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .subscribe(obsSingleNoteId)
 
     }
 
@@ -110,10 +130,14 @@ class EditorActivity : BaseActivity() {
             editorList[i].lastUpdated = lastUpdated
             if (v is AppCompatEditText) {
                 editorList[i].text = v.text.toString()
+                if(v.text.trim().isEmpty())
+                    continue
+
             }else if(v is AppCompatImageView){
                 /*
                 * add file paths
                 * */
+
                 editorList[i].uri =  editorView.uriList[indexUri].toString()
                 ++indexUri
             }

@@ -23,8 +23,11 @@ public interface NotesDao {
     @Query("select * from notes")
     Single<List<Notes>> getAllNotes();
 
+    @Query("select * from notes where noteId = :noteId")
+    Single<List<Notes>> getNotesForUid(String noteId);
+
     @Query("select * from notes where uId = :uId")
-    Single<List<Notes>> getNotesForUid(Long uId);
+    Single<Notes> getNoteForUid(Long uId);
 
     @Insert
     void insertAll(ArrayList<Notes> list);
