@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import com.example.rkrde.awesometexteditor.adapter.MyAdapter
 import com.example.rkrde.awesometexteditor.MyApp
@@ -21,7 +22,7 @@ import kotlinx.android.synthetic.main.activity_notes_home.*
 import timber.log.Timber
 
 
-class NotesHomeActivity : AppCompatActivity() {
+class HomeActivity : AppCompatActivity() {
 
     lateinit var myAdapter: MyAdapter
     lateinit var appDatabase:AppDatabase
@@ -63,7 +64,7 @@ class NotesHomeActivity : AppCompatActivity() {
 
     fun fetchNotesAndDisplay(){
         val allNotes = appDatabase.notesDao().getAllNotes()
-
+        tvAddNote.visibility = View.GONE
 
         val obsSingle = object : SingleObserver<List<Notes>> {
             override fun onSubscribe(d: Disposable) {
@@ -79,7 +80,8 @@ class NotesHomeActivity : AppCompatActivity() {
                     myAdapter.notifyDataSetChanged()
                 }else
                 {
-                    Toast.makeText(context,"no notes",Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(context,"no notes",Toast.LENGTH_SHORT).show()
+                    tvAddNote.visibility = View.VISIBLE
                 }
             }
 

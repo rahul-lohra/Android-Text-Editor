@@ -17,6 +17,13 @@ import com.example.rkrde.awesometexteditor.modal.FileModal
 import com.example.rkrde.awesometexteditor.R
 import com.example.rkrde.awesometexteditor.modal.Notes
 import kotlinx.android.synthetic.main.activity_editor.*
+import android.R.attr.path
+import android.R.attr.scheme
+import android.graphics.BitmapFactory
+import com.example.rkrde.awesometexteditor.modal.MediaMetaData
+import timber.log.Timber
+import java.io.File
+
 
 /**
  * Created by rkrde on 09-09-2017.
@@ -30,7 +37,7 @@ class EditorView : FrameLayout {
     val etList = arrayListOf<AppCompatEditText>()
     val imgList = arrayListOf<AppCompatImageView>()
     val notesList = arrayListOf<Notes>()
-    val uriList = arrayListOf<Uri>()
+    val uriList = arrayListOf<MediaMetaData>()
 
 
     fun showNoteFromDb(notes: List<Notes>,contentResolver: ContentResolver) {
@@ -71,12 +78,27 @@ class EditorView : FrameLayout {
 
     fun addImageFromDb(contentResolver:ContentResolver,notes: Notes) {
 
-        val uri = Uri.parse(notes.uri)
-        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
-        addBitmap(uri,bitmap)
+//        val uri = buildUriFromString(notes.uri)
+        val filePath = notes.fileName
+
+        val file = File(context.filesDir, filePath)
+//        val filePathColumn = arrayOf(MediaStore.Images.Media.DATA)
+//        val cursor = contentResolver.query(uri, filePathColumn, null, null, null)
+//        cursor.moveToFirst()
+//        val columnIndex = cursor.getColumnIndex(filePathColumn[0])
+//        val picturePath = cursor.getString(columnIndex)
+//        cursor.close()
+
+
+//        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+//        addBitmap(uri,bitmap)
+        Timber.d("Got the bitmap")
     }
 
-    fun addBitmap(uri: Uri, bitmap: Bitmap) {
+
+
+    fun addBitmap(uri: Uri, bitmap: Bitmap,extension:String) {
         val imageView = AppCompatImageView(context)
         imageView.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         imageView.adjustViewBounds = false
@@ -103,7 +125,7 @@ class EditorView : FrameLayout {
 
         val index = ll.childCount
         val note = Notes(index,Notes.TYPE_IMAGE)
-        uriList.add(uri)
+        uriList.add(MediaMetaData(uri,extension))
         note.uri = uri.toString()
         notesList.add(note)
 

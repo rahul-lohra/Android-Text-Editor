@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.rkrde.awesometexteditor">
 
+    <uses-permission android:name="android.permission.MANAGE_DOCUMENTS"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <application
         android:name=".MyApp"
         android:allowBackup="true"
@@ -13,7 +16,7 @@
         <activity android:name=".activity.BaseActivity"></activity>
         <activity android:name=".activity.EditorActivity">
         </activity>
-        <activity android:name=".activity.NotesHomeActivity">
+        <activity android:name=".activity.HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

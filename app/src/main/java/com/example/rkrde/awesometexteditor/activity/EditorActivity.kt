@@ -1,7 +1,9 @@
 package com.example.rkrde.awesometexteditor.activity
 
+import android.Manifest
 import android.app.Activity
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.AsyncTask
@@ -16,9 +18,12 @@ import android.view.MenuItem
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import com.example.rkrde.awesometexteditor.Constants
+import com.example.rkrde.awesometexteditor.ConstantsKotlin
+
 import com.example.rkrde.awesometexteditor.modal.FileModal
 import com.example.rkrde.awesometexteditor.R
 import com.example.rkrde.awesometexteditor.modal.Notes
+import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.*
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -46,7 +51,27 @@ class EditorActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
-        handleIntent()
+
+        checkPermission()
+//        handleIntent()
+    }
+
+    fun checkPermission() {
+        val rxPermissions = RxPermissions(this)
+        rxPermissions
+                .request(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.READ_CONTACTS)
+                .subscribe { granted ->
+                    if (granted) { // Always true pre-M
+                        // I can control the camera now
+                        Timber.d("perm granted")
+                        handleIntent()
+                    } else {
+                        // Oups permission denied
+                        Timber.d("perm denied")
+                    }
+                }
+
+
     }
 
     fun handleIntent() {
@@ -62,47 +87,29 @@ class EditorActivity : BaseActivity() {
     }
 
     fun showNoteFromDb() {
-        val noteId = appdatabase.notesDao().getNoteForUid(uId)
+//        val noteId = appdatabase.notesDao().getNoteForUid(uId)
+        val noteId = intent.extras.getString("noteId")
 
+        val notes = appdatabase.notesDao().getNotesForUid(noteId)
 
-        val obsSingleNoteId = object : SingleObserver<Notes> {
+        val obsSingle = object : SingleObserver<List<Notes>> {
             override fun onSubscribe(d: Disposable) {
                 Timber.d("onSubscribe")
             }
 
-            override fun onSuccess(t: Notes) {
-
-                val notes = appdatabase.notesDao().getNotesForUid(t.noteId)
-
-                val obsSingle = object : SingleObserver<List<Notes>> {
-                    override fun onSubscribe(d: Disposable) {
-                        Timber.d("onSubscribe")
-                    }
-
-                    override fun onSuccess(t: List<Notes>) {
-                        Timber.d("onSuccess")
-                        editorView.showNoteFromDb(t,contentResolver)
-                    }
-
-                    override fun onError(e: Throwable) {
-                        Timber.d("onError: ${e.message}")
-                    }
-                }
-
-                notes.subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                notes.subscribe(obsSingle)
-
+            override fun onSuccess(t: List<Notes>) {
+                Timber.d("onSuccess")
+                editorView.showNoteFromDb(t, contentResolver)
             }
 
             override fun onError(e: Throwable) {
-                Timber.d("onError")
+                Timber.d("onError: ${e.message}")
             }
         }
 
-        noteId.subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .subscribe(obsSingleNoteId)
+        notes.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(obsSingle)
 
     }
 
@@ -122,7 +129,7 @@ class EditorActivity : BaseActivity() {
         val date = uniqueId
         val lastUpdated = Constants.getCurrentTime()
         var indexUri = 0 //editorView.uriList
-        for (i in 0..linearLayout.childCount-1) {
+        for (i in 0..linearLayout.childCount - 1) {
             val v = linearLayout.getChildAt(i)
 
             editorList[i].noteId = uniqueId
@@ -130,15 +137,19 @@ class EditorActivity : BaseActivity() {
             editorList[i].lastUpdated = lastUpdated
             if (v is AppCompatEditText) {
                 editorList[i].text = v.text.toString()
-                if(v.text.trim().isEmpty())
+                if (v.text.trim().isEmpty())
                     continue
 
-            }else if(v is AppCompatImageView){
+            } else if (v is AppCompatImageView) {
                 /*
                 * add file paths
                 * */
+                val uri = editorView.uriList[indexUri].uri
+                val ext = editorView.uriList[indexUri].ext
 
-                editorList[i].uri =  editorView.uriList[indexUri].toString()
+                val fileName = saveImageToFile(uri,ext)
+                editorList[i].uri = editorView.uriList[indexUri].toString()
+                editorList[i].fileName = fileName
                 ++indexUri
             }
         }
@@ -148,6 +159,32 @@ class EditorActivity : BaseActivity() {
         }
 
 
+    }
+
+    fun getFilePath() {
+
+    }
+
+    fun saveImageToFile(uri:Uri,extension:String):String {
+        val filename = ConstantsKotlin().getCurTime("yyyyMMddhhmmssSSS")+"."+extension
+
+        val inputStream = contentResolver.openInputStream(uri)
+        val outputStream = openFileOutput(filename, Context.MODE_PRIVATE)
+
+        try {
+            var c = inputStream.read()
+            while (c!=-1){
+                outputStream.write(c)
+                c = inputStream.read()
+            }
+            outputStream.close();
+        } catch (e:Exception) {
+            e.printStackTrace();
+        }finally {
+            inputStream.close()
+            outputStream.close()
+        }
+        return filename
     }
 
     fun getImageFromCamera() {
@@ -206,8 +243,11 @@ class EditorActivity : BaseActivity() {
 //                    val fileModal = convertUriToTempFile(uri, targetMimeType[i])
 //                    val async = Async(uri,targetMimeType[i]).execute()
 //                    sendImageToEditor(fileModal)
-                    val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
-                    editorView.addBitmap(uri,bitmap)
+                    val uri2 = uri.toString()
+                    val uri3 = Uri.parse(uri2)
+                    val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri3)
+                    val extension = targetMimeType[i]
+                    editorView.addBitmap(uri, bitmap,extension)
                     break
                 }
 

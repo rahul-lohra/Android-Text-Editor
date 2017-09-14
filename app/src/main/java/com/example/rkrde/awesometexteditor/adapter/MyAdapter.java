@@ -72,6 +72,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 public void onClick(View view) {
                     Intent intent = new Intent(context, EditorActivity.class);
                     intent.putExtra("uId", MyViewHolder.this.notes.getuId());
+                    intent.putExtra("noteId", MyViewHolder.this.notes.getNoteId());
                     context.startActivity(intent);
                 }
             });

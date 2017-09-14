@@ -49,6 +49,9 @@ dependencies {
     compile 'com.jakewharton.timber:timber:4.5.1'
     compile "org.jetbrains.anko:anko-coroutines:$anko_version"
 
+    compile 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.4@aar'
+
+
 
 }
 repositories {

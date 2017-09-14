@@ -33,6 +33,7 @@ public class Constants {
     }
 
     public static String getCurrentTime(){
+
         Date date = new Date();
         String strDateFormat = "yyyy-MMM-dd HH:mm:ss";
         DateFormat dateFormat = new SimpleDateFormat(strDateFormat);
