@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.MediaStore
 import android.support.v7.widget.AppCompatEditText
 import android.support.v7.widget.AppCompatImageView
 import android.util.AttributeSet
@@ -16,9 +15,6 @@ import com.bumptech.glide.Glide
 import com.example.rkrde.awesometexteditor.modal.FileModal
 import com.example.rkrde.awesometexteditor.R
 import com.example.rkrde.awesometexteditor.modal.Notes
-import kotlinx.android.synthetic.main.activity_editor.*
-import android.R.attr.path
-import android.R.attr.scheme
 import android.graphics.BitmapFactory
 import com.example.rkrde.awesometexteditor.modal.MediaMetaData
 import timber.log.Timber
@@ -78,31 +74,32 @@ class EditorView : FrameLayout {
 
     fun addImageFromDb(contentResolver:ContentResolver,notes: Notes) {
 
-//        val uri = buildUriFromString(notes.uri)
         val filePath = notes.fileName
 
         val file = File(context.filesDir, filePath)
-//        val filePathColumn = arrayOf(MediaStore.Images.Media.DATA)
-//        val cursor = contentResolver.query(uri, filePathColumn, null, null, null)
-//        cursor.moveToFirst()
-//        val columnIndex = cursor.getColumnIndex(filePathColumn[0])
-//        val picturePath = cursor.getString(columnIndex)
-//        cursor.close()
-
 
 //        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
         val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-//        addBitmap(uri,bitmap)
+        addBitmap(Uri.parse(notes.uri),bitmap,notes.fileName.split(".")[1],false)
         Timber.d("Got the bitmap")
     }
 
 
 
-    fun addBitmap(uri: Uri, bitmap: Bitmap,extension:String) {
+    /*
+    * Uri will be used later to get absolute path
+    * */
+    fun addBitmap(uri: Uri, bitmap: Bitmap, extension:String, shouldUpdateNoteList: Boolean = true) {
+        /*
+        * Create an image view
+        * */
         val imageView = AppCompatImageView(context)
         imageView.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         imageView.adjustViewBounds = false
 
+        /*
+        * create a var for focused item --> last item should be focused(not sure)
+        * */
         var focusedEt = 0
 
         var size: Int = ll.childCount
@@ -118,6 +115,9 @@ class EditorView : FrameLayout {
 
         }
 
+        /*
+        * add image view to linear layout
+        * */
         val indexOfImageView = focusedEt + 1
         ll.addView(imageView, indexOfImageView)
         imageView.setImageBitmap(bitmap)
@@ -127,10 +127,14 @@ class EditorView : FrameLayout {
         val note = Notes(index,Notes.TYPE_IMAGE)
         uriList.add(MediaMetaData(uri,extension))
         note.uri = uri.toString()
-        notesList.add(note)
+        if(shouldUpdateNoteList)
+        {
+            notesList.add(note)
 
-        if (isLastEtFocused())
-            addNewEditText()
+            if (isLastEtFocused())
+                addNewEditText()
+        }
+
     }
 
     fun isLastEtFocused(): Boolean {
@@ -138,7 +142,7 @@ class EditorView : FrameLayout {
     }
 
 
-    fun addNewEditText() {
+    fun addNewEditText(shouldUpdateNoteList: Boolean = true) {
 
         val et = AppCompatEditText(context)
 //        et.layoutParams = FrameLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,resources.getDimensionPixelOffset(R.dimen.et_height))

@@ -146,10 +146,17 @@ class EditorActivity : BaseActivity() {
                 * */
                 val uri = editorView.uriList[indexUri].uri
                 val ext = editorView.uriList[indexUri].ext
+//                var filePath = if(editorView.uriList[indexUri].filePath.isEmpty()?saveImageToFile(uri,ext):editorView.uriList[indexUri].filePath
+                var filePath = ""
 
-                val fileName = saveImageToFile(uri,ext)
+                if(editorView.uriList[indexUri].filePath.isEmpty()){
+                   filePath = saveImageToFile(uri,ext)
+                }else{
+                    filePath = editorView.uriList[indexUri].filePath
+                }
+
                 editorList[i].uri = editorView.uriList[indexUri].toString()
-                editorList[i].fileName = fileName
+                editorList[i].fileName = filePath
                 ++indexUri
             }
         }
@@ -161,9 +168,6 @@ class EditorActivity : BaseActivity() {
 
     }
 
-    fun getFilePath() {
-
-    }
 
     fun saveImageToFile(uri:Uri,extension:String):String {
         val filename = ConstantsKotlin().getCurTime("yyyyMMddhhmmssSSS")+"."+extension
