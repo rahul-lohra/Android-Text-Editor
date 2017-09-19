@@ -135,12 +135,12 @@ class EditorActivity : BaseActivity() {
             editorList[i].noteId = uniqueId
             editorList[i].creationDate = date
             editorList[i].lastUpdated = lastUpdated
-            if (v is AppCompatEditText) {
+            if (v is AppCompatEditText && v.text.isNotEmpty()) {
                 editorList[i].text = v.text.toString()
                 if (v.text.trim().isEmpty())
                     continue
 
-            } else if (v is AppCompatImageView) {
+            } else if (v is AppCompatImageView ) {
                 /*
                 * add file paths
                 * */

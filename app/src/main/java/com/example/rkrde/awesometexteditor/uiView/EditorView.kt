@@ -46,6 +46,7 @@ class EditorView : FrameLayout {
                 Notes.TYPE_IMAGE-> addImageFromDb(contentResolver,x)
             }
         }
+        addLastEditText()
 
     }
 
@@ -54,6 +55,11 @@ class EditorView : FrameLayout {
         imgList.clear()
         notesList.clear()
         ll.removeAllViews()
+    }
+
+    fun addLastEditText(){
+        if (isLastEtFocused())
+            addNewEditText()
     }
 
     fun addEditextFromDb(note: Notes) {
@@ -80,8 +86,24 @@ class EditorView : FrameLayout {
 
 //        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
         val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-        addBitmap(Uri.parse(notes.uri),bitmap,notes.fileName.split(".")[1],false)
+        addBitmapOnly(bitmap)
+//        addBitmap(Uri.parse(notes.uri),bitmap,notes.fileName.split(".")[1],false)
         Timber.d("Got the bitmap")
+    }
+
+    fun addBitmapOnly(bitmap: Bitmap){
+        /*
+        * Create an image view
+        * */
+        val imageView = AppCompatImageView(context)
+        imageView.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        imageView.adjustViewBounds = false
+
+        /*
+        * attach bitmap to imageview
+        * */
+        ll.addView(imageView)
+        imageView.setImageBitmap(bitmap)
     }
 
 

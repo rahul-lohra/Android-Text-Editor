@@ -26,6 +26,9 @@ public interface NotesDao {
     @Query("select * from notes where noteId = :noteId")
     Single<List<Notes>> getNotesForUid(String noteId);
 
+    @Query("select * from notes where uid in(select min(uid) from notes group by noteid)")
+    Single<List<Notes>> getFirstNotesFromUid();
+
     @Query("select * from notes where uId = :uId")
     Single<Notes> getNoteForUid(Long uId);
 

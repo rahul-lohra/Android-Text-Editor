@@ -63,7 +63,7 @@ class HomeActivity : AppCompatActivity() {
     }
 
     fun fetchNotesAndDisplay(){
-        val allNotes = appDatabase.notesDao().getAllNotes()
+        val allNotes = appDatabase.notesDao().getFirstNotesFromUid()
         tvAddNote.visibility = View.GONE
 
         val obsSingle = object : SingleObserver<List<Notes>> {
